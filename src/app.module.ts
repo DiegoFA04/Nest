@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { CatsModule } from './cats/cats.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BreedsModule } from './breeds/breeds.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,7 +18,9 @@ import { BreedsModule } from './breeds/breeds.module';
       synchronize: true,
     }),
     CatsModule,
-    BreedsModule
+    BreedsModule,
+    UsersModule,
+    AuthModule
   ],
   controllers: [],
   providers: [],
