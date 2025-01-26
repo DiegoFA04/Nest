@@ -21,7 +21,16 @@ export class AuthService {
             throw new BadRequestException('User already exists');
         }
 
-        return this.usersService.create({ name, email, password: await bcryptjs.hash(password, 10) });
+        await this.usersService.create({
+            name,
+            email,
+            password: await bcryptjs.hash(password, 10)
+        });
+
+        return {
+            name,
+            email,
+        };
     }
 
     async login({ email, password }: LoginDto) {
@@ -38,14 +47,22 @@ export class AuthService {
             throw new UnauthorizedException('Password is incorrect');
         }
 
-        const payload = { sub: user.id, email: user.email };
+        const payload = { sub: user.id, email: user.email, role: user.role };
 
-        const token = await this.jwtService.sign(payload);
+        const token = await this.jwtService.signAsync(payload);
 
         return {
             access_token: token,
             email: user.email,
         };
+    }
+
+    async profile({ email, role }: { email: string, role: string }) {
+        /* if (role !== 'admin') {
+            throw new UnauthorizedException('You are not authorized to access this resource');
+        } */
+
+        return await this.usersService.findOneByEmail(email);
     }
 
 }
