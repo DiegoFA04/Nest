@@ -23,17 +23,17 @@ export class CatsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.catsService.findOne(+id);
+  findOne(@Param('id') id: number, @ActiveUser() user: UserActiveInterface) {
+    return this.catsService.findOne(id, user);
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateCatDto: UpdateCatDto) {
-    return this.catsService.update(+id, updateCatDto);
+  update(@Param('id') id: number, @Body() updateCatDto: UpdateCatDto, @ActiveUser() user: UserActiveInterface) {
+    return this.catsService.update(id, updateCatDto, user);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.catsService.remove(+id);
+  remove(@Param('id') id: number, @ActiveUser() user: UserActiveInterface) {
+    return this.catsService.remove(id, user);
   }
 }

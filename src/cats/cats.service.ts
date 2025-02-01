@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateCatDto } from './dto/create-cat.dto';
 import { UpdateCatDto } from './dto/update-cat.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,13 +21,7 @@ export class CatsService {
 
   async create(createCatDto: CreateCatDto, user: UserActiveInterface) {
 
-    const breed = await this.breedRepositorie.findOneBy({
-      name: createCatDto.breed
-    });
-
-    if (!breed) {
-      throw new BadRequestException('Breed not found');
-    }
+    const breed = await this.validateBreed(createCatDto.breed);
 
     const cat = this.catRepository.create({
       ...createCatDto,
@@ -50,16 +44,47 @@ export class CatsService {
     });
   }
 
-  async findOne(id: number) {
-    return await this.catRepository.findOneBy({ id });
+  async findOne(id: number, user: UserActiveInterface) {
+    const cat = await this.catRepository.findOneBy({ id });
+
+    if (!cat) {
+      throw new BadRequestException('Cat not found');
+    }
+
+    this.validateOwnership(cat, user);
+
+    return cat;
   }
 
-  async update(id: number, updateCatDto: UpdateCatDto) {
-    //return await this.catRepository.update(id, updateCatDto);
-    return 0;
+  async update(id: number, updateCatDto: UpdateCatDto, user: UserActiveInterface) {
+
+    await this.findOne(id, user);
+
+    return await this.catRepository.update(id, {
+      ...updateCatDto,
+      breed: updateCatDto.breed ? await this.validateBreed(updateCatDto.breed) : undefined,
+      userEmail: user.email
+    });
   }
 
-  async remove(id: number) {
+  async remove(id: number, user: UserActiveInterface) {
+    await this.findOne(id, user);
     return await this.catRepository.softDelete(id);
+  }
+
+  private validateOwnership(cat: Cat, user: UserActiveInterface) {
+    if (user.role !== Role.ADMIN && cat.userEmail !== user.email) {
+      throw new UnauthorizedException('You do not have permission to view this cat');
+    }
+  }
+
+  private async validateBreed(breed: string) {
+    const breedEntity = await this.breedRepositorie.findOneBy({ name: breed });
+
+    if (!breedEntity) {
+      throw new BadRequestException('Breed not found');
+    }
+
+    return breedEntity;
   }
 }
